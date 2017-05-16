@@ -1,3 +1,7 @@
+/**
+ * A sticky header view serve as a search bar
+ */
+
 import React from 'react';
 import {
     View,
@@ -5,9 +9,6 @@ import {
     StyleSheet
 } from 'react-native';
 
-/**
- * A sticky header view for the search bar. 
- */
 const styles = StyleSheet.create({
     container: {
         flex: 1,

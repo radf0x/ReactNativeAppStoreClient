@@ -1,4 +1,4 @@
-package com.rnplayground;
+package com.reactnativeappstoreclient;
 
 import android.app.Application;
 

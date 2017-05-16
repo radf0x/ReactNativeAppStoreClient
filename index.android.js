@@ -1,4 +1,9 @@
-'user strict';
+/**
+ * Sample React Native App
+ * https://github.com/facebook/react-native
+ * @flow
+ */
+
 import React, { Component } from 'react';
 import {
   AppRegistry,
@@ -7,21 +12,22 @@ import {
   View
 } from 'react-native';
 
-var FreeAppItems = require('./components/FreeAppItem')
+import FreeAppItem from './components/models/FreeAppItem'
 
-var ROUTES = {
-  free_app_items: FreeAppItems
-};
-
-export default class RNPlayground extends Component {
+export default class ReactNativeAppStoreClient extends Component {
   render() {
     return (
       <View style={styles.container}>
-        {
-          /**
-          todo: shall render a view for displaying both list.
-          */
-        }
+        <Text style={styles.welcome}>
+          Welcome to React Native!
+        </Text>
+        <Text style={styles.instructions}>
+          To get started, edit index.android.js
+        </Text>
+        <Text style={styles.instructions}>
+          Double tap R on your keyboard to reload,{'\n'}
+          Shake or press menu button for dev menu
+        </Text>
       </View>
     );
   }
@@ -46,4 +52,4 @@ const styles = StyleSheet.create({
   },
 });
 
-AppRegistry.registerComponent('RNPlayground', () => RNPlayground);
+AppRegistry.registerComponent('ReactNativeAppStoreClient', () => ReactNativeAppStoreClient);

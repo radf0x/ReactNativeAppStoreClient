@@ -1,5 +1,13 @@
+/**
+ * Vertical rows to display 100 free apps.
+ */
 import React from 'react';
-import { View, TextView, StyleSheet, Image } from 'react-native';
+import {
+    View,
+    TextView,
+    Image,
+    StyleSheet
+} from 'react-native';
 
 const style = StyleSheet.create({
     container: {
@@ -19,17 +27,16 @@ const style = StyleSheet.create({
     }
 });
 
-const RowHorizontal = (props) => (
+const RowFreeApp = (props) => (
     <View style={styles.container}>
         <Image
             source={{ uri: props.picture.large }}
             style={styles.photo}
         />
         <Text style={styles.text}>
-            // data model         dummy text  data model
-            {`${props.name.first}`}{`---`}{`${props.name.last}`}
+            {`${props.im:name.label}`}}
         </Text>
     </View>
 )
 
-export default RowHorizontal;
+export default RowFreeApp;

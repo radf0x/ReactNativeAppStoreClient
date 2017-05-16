@@ -12,7 +12,7 @@ import {
   View
 } from 'react-native';
 
-export default class RNPlayground extends Component {
+export default class ReactNativeAppStoreClient extends Component {
   render() {
     return (
       <View style={styles.container}>
@@ -50,4 +50,4 @@ const styles = StyleSheet.create({
   },
 });
 
-AppRegistry.registerComponent('RNPlayground', () => RNPlayground);
+AppRegistry.registerComponent('ReactNativeAppStoreClient', () => ReactNativeAppStoreClient);

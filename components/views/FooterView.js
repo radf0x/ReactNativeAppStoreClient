@@ -1,3 +1,8 @@
+/**
+ * A Footer View to serve lazy loading feature.
+ * Right now is a active loading approach, will implement delegation later.
+ */
+
 import React from 'react';
 import {
     View,
@@ -6,4 +11,35 @@ import {
     TouchableOpacity
 } from 'react-native';
 
-//todo shall be a loading footer.
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        padding: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    button: {
+        borderColor: '#8E8E8E',
+        borderWidth: StyleSheet.hairlineWidth,
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 5,
+    },
+    text: {
+        color: '#8E8E8E',
+    }
+});
+
+const Footer = (props) => (
+    <View style={styles.container}>
+        <TouchableOpacity
+            style={styles.button}
+            onPress={() => console.log("load more")} >
+            <Text style={styles.text}>
+                Load More
+            </Text>
+        </TouchableOpacity>
+    </View>
+);
+
+export default Footer;

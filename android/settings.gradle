@@ -1,3 +1,3 @@
-rootProject.name = 'RNPlayground'
+rootProject.name = 'ReactNativeAppStoreClient'
 
 include ':app'
