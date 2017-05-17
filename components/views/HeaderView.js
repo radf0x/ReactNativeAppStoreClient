@@ -5,7 +5,7 @@
 import React from 'react';
 import {
     View,
-    Text,
+    TextInput,
     StyleSheet
 } from 'react-native';
 
@@ -18,23 +18,44 @@ const styles = StyleSheet.create({
         backgroundColor: '#C1C1C1',
     },
     input: {
-        height: 30,
+        height: 50,
         flex: 1,
-        paddingHorizontal: 8,
-        fontSize: 15,
+        fontSize: 20,
         backgroundColor: '#FFFFFF',
         borderRadius: 2,
     },
 });
 
-const HeaderView = (props) => (
+class HeaderView extends React.Component {
+
+    constructor(props) {
+        super(props);
+    
+    }
+    render() {
+        console.log(this.text);
+        return (
+            <View style={styles.container}>
+                <TextInput
+                    style={styles.input}
+                    placeHolder={this.title}
+                    placeholderTextColor='gray'
+                    onChangeText={() => console.log("searching for :", this.title)}
+                />
+            </View>
+        )
+    }
+}
+
+/*const HeaderView = (props) => (
     <View style={styles.container}>
         <TextInput
             style={styles.input}
             placeHolder="Search for apps"
+            placeholderTextColor='gray'
             onChangeText={(text) => console.log("searching for :", text)}
         />
     </View>
 );
-
+*/
 export default HeaderView;
