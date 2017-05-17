@@ -30,32 +30,20 @@ class HeaderView extends React.Component {
 
     constructor(props) {
         super(props);
-    
     }
     render() {
-        console.log(this.text);
+        console.log(this.props.title)
         return (
             <View style={styles.container}>
                 <TextInput
                     style={styles.input}
-                    placeHolder={this.title}
+                    placeHolder={this.props.name}
                     placeholderTextColor='gray'
-                    onChangeText={() => console.log("searching for :", this.title)}
+                    onChangeText={(text) => console.log("searching for :", text)}
                 />
             </View>
         )
     }
 }
 
-/*const HeaderView = (props) => (
-    <View style={styles.container}>
-        <TextInput
-            style={styles.input}
-            placeHolder="Search for apps"
-            placeholderTextColor='gray'
-            onChangeText={(text) => console.log("searching for :", text)}
-        />
-    </View>
-);
-*/
 export default HeaderView;

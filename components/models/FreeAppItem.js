@@ -21,13 +21,12 @@ import {
 } from 'react-native';
 
 import Request from './api';
-import RowOdd from '../views/RowOdd';
-import RowEven from '../views/RowEven';
+// import RowOdd from '../views/RowOdd';
+// import RowEven from '../views/RowEven';
 import HeaderView from '../views/HeaderView';
 
 class FreeAppItem extends Component {
     constructor(props) {
-        console.log("constructor");
         super(props);
         this.state = {
             title: "Awesome App Store",
@@ -41,11 +40,9 @@ class FreeAppItem extends Component {
     }
 
     componentWillMount() {
-        console.log('Will mount');
     }
 
     componentDidMount() {
-        console.log('Did mount');
         this.getTopFreeApps();
     }
 
@@ -65,7 +62,8 @@ class FreeAppItem extends Component {
             })
             .catch((exception) => {
                 console.log(exception);
-            });
+            })
+            .done();
     }
 
     queryAppById() {
@@ -76,9 +74,29 @@ class FreeAppItem extends Component {
 
     }
 
-    _renderRow() {
-        // console.log("json: ", app['im:image'][0]);
-        (apps) => <RowOdd {...apps} />
+    _renderRow(rowData, sectionID, rowID) {
+        return (
+            <View style={styles.itemContainer}>
+                <Text style={styles.index}>
+                    {parseInt(rowID) + 1}
+                </Text>
+                <Image source={{ uri: rowData['im:image'][0].label }} style={styles.thumbnail} />
+                <View style={styles.textContainer}>
+                    <Text style={styles.name}>
+                        {`${rowData['im:name'].label}`}
+                    </Text>
+                    <Text style={styles.category}>
+                        {`${rowData.category.attributes.term}`}
+                    </Text>
+                </View>
+            </View>
+        );
+    }
+
+    _renderHeader() {
+        return (
+            <HeaderView title={this.state.title}/>
+        )
     }
 
     render() {
@@ -89,8 +107,8 @@ class FreeAppItem extends Component {
                     this.state.loaded &&
                     <ListView
                         dataSource={this.state.dataSource}
-                        renderRow={(apps) => <RowOdd{...apps} />}
-                        renderHeader={(title) => <HeaderView {...title} />}
+                        renderRow={this._renderRow.bind(this)}
+                        renderHeader={this._renderHeader.bind(this)}
                     />
                 }
             </View>
@@ -99,9 +117,32 @@ class FreeAppItem extends Component {
 }
 
 const styles = StyleSheet.create({
-    container: {
+
+    itemContainer: {
         flex: 1,
-        marginTop: 20,
+        padding: 10,
+        flexDirection: 'row',
+    },
+    index: {
+        lineHeight: 50,
+        justifyContent: 'center',
+    },
+    textContainer: {
+        flex: 1,
+        flexDirection: 'column'
+    },
+    name: {
+        marginTop: 6,
+        fontSize: 16,
+    },
+    category: {
+        fontSize: 12,
+    },
+    thumbnail: {
+        height: 60,
+        width: 60,
+        borderRadius: 10,
+        margin: 10
     }
 });
 
