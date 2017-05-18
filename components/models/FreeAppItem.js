@@ -5,8 +5,6 @@
  * React.create | extends Component 
  * https://toddmotto.com/react-create-class-versus-component/
  */
-
-'use strict';
 import React, { Component } from 'react';
 import {
     AppRegistry,
@@ -17,24 +15,25 @@ import {
     View,
     Image,
     ScrollView,
-    AsyncStorage
+    AsyncStorage,
+    ActivityIndicator
 } from 'react-native';
 
-import Request from './api';
-// import RowOdd from '../views/RowOdd';
-// import RowEven from '../views/RowEven';
+import RequestAPI from './api';
 import RatingView from 'react-native-star-rating-view/StarRatingBar'
-import HeaderView from '../views/HeaderView';
-
+import SearchView from '../views/SearchView';
+import RecommendedListView from '../views/RecommendedListView';
 
 let ratingResults = [];
-let apps = [];
+let topApps = [];
+let recommendedApps = [];
+const title = "Awesome App Store";
+
 class FreeAppItem extends Component {
     constructor(props) {
         super(props);
         this.state = {
             queryingRating: false,
-            title: "Awesome App Store",
             queryingTopApps: true,
             page: 1,
             dataSource: new ListView.DataSource({
@@ -47,27 +46,27 @@ class FreeAppItem extends Component {
     }
 
     componentDidMount() {
-        this.getTopFreeApps();
+        this.queryTopFreeApps();
     }
 
     /**
      * Should wrap it in API.js
      */
-    getTopFreeApps() {
+    queryTopFreeApps() {
         fetch("https://itunes.apple.com/hk/rss/topfreeapplications/limit=100/json",
             { method: "GET" })
             .then((response) => {
                 return response.json();
             })
             .then(data => {
-                console.log(data.feed.entry)
-                apps = data.feed.entry,
+                console.log(data.feed.entry);
+                topApps = data.feed.entry;
                     this.setState({
-                        dataSource: this.state.dataSource.cloneWithRows(apps),
+                        dataSource: this.state.dataSource.cloneWithRows(topApps),
                         queryingTopApps: false,
                         page: this.state.page + 1
                     });
-                this.queryAppDetailById(apps)
+                this.queryAppDetailById(topApps)
             })
             .catch((exception) => {
                 console.log(exception);
@@ -76,10 +75,12 @@ class FreeAppItem extends Component {
     }
 
     /**
+     * 
      * Should wrap it in API.js
      */
-    queryAppDetailById(apps) {
-        apps.map(function (item) {
+    queryAppDetailById(topApps) {
+        //todo query lookup API.
+        topApps.map(function (item) {
             fetch("https://itunes.apple.com/hk/lookup?id=" + item.id.attributes['im:id'], { method: "GET" })
                 .then((response) => {
                     return response.json();
@@ -93,16 +94,24 @@ class FreeAppItem extends Component {
                 })
                 .done();
         })
-        // console.log(ratingResults)
     }
 
+    /**
+     * odd row ? round corner : circle 
+     */
     _renderRow(rowData, sectionID, rowID) {
         return (
             <View style={styles.itemContainer}>
                 <Text style={styles.index}>
                     {parseInt(rowID) + 1}
                 </Text>
-                <Image source={{ uri: rowData['im:image'][0].label }} style={styles.thumbnail} />
+                {
+                    parseInt(rowID) % 2 == 0
+                        ?
+                        <Image source={{ uri: rowData['im:image'][0].label }} style={styles.thumbnailEven} />
+                        :
+                        <Image source={{ uri: rowData['im:image'][0].label }} style={styles.thumbnailOdd} />
+                }
                 <View style={styles.textContainer}>
                     <Text style={styles.name}>
                         {`${rowData['im:name'].label}`}
@@ -122,32 +131,57 @@ class FreeAppItem extends Component {
         );
     }
 
-    _renderHeader() {
+    _renderRecommendedView() {
         return (
-            <HeaderView title={this.state.title} />
+            <RecommendedListView />
         )
     }
 
+    _renderFooter = () => {
+        if (!this.state.queryingTopApps) {
+            return <View style={styles.scrollSpinner} />
+        }
+        return <ActivityIndicator style={styles.scrollSpinner} />
+    }
+
     render() {
-        console.log();
         return (
-            <View>
-                {
-                    !this.state.queryingTopApps &&
-                    <ListView
-                        dataSource={this.state.dataSource}
-                        renderRow={this._renderRow.bind(this)}
-                        renderHeader={this._renderHeader.bind(this)}
-                    />
-                }
+            <View style={styles.mainContainer}>
+                <SearchView style={styles.headerContainer}
+                    placeHolder={title} />
+                <View style={styles.contentContainer}>
+                    <ScrollView>
+                        {
+                            !this.state.queryingTopApps &&
+                            <ListView
+                                dataSource={this.state.dataSource}
+                                renderRow={this._renderRow}
+                                renderHeader={this._renderRecommendedView}
+                                renderFooter={this._renderFooter}
+                            />
+                        }
+                    </ScrollView>
+                </View>
             </View>
         );
     }
 }
 
 const styles = StyleSheet.create({
-
-    itemContainer: {
+    mainContainer: {
+        backgroundColor: '#C1FFC1',
+        flex: 1,
+        flexDirection: 'column'
+    },
+    headerContainer: {
+        flexDirection: 'row',
+        backgroundColor: 'yellow',
+    },
+    contentContainer: { // app list view style
+        flex: 6,
+        backgroundColor: '#FFFFF0'
+    },
+    itemContainer: {    // app item style
         flex: 1,
         padding: 10,
         flexDirection: 'row',
@@ -168,14 +202,23 @@ const styles = StyleSheet.create({
         marginTop: 6,
         fontSize: 12,
     },
-    thumbnail: {
+    thumbnailOdd: {
         height: 60,
         width: 60,
         borderRadius: 10,
         margin: 10
     },
+    thumbnailEven: {
+        height: 60,
+        width: 60,
+        borderRadius: 30,
+        margin: 10
+    },
     star: {
         marginTop: 6,
+    },
+    scrollSpinner: {
+        marginVertical: 20,
     }
 });
 

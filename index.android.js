@@ -15,9 +15,7 @@ import FreeAppItem from './components/models/FreeAppItem'
 class ReactNativeAppStoreClient extends Component {
   render() {
     return (
-      <View>
         <FreeAppItem/>
-      </View>
     );
   }
 }
