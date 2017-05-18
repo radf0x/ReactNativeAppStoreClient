@@ -12,14 +12,19 @@ import {
 const styles = StyleSheet.create({
     container: {
         padding: 8,
-        backgroundColor: '#C1C1C1',
+        backgroundColor: '#FFFFFF',
+        borderBottomWidth: .25,
+        borderColor: 'gray'
     },
     input: {
-        height: 42,
-        fontSize: 16,
-        backgroundColor: '#FFFFFF',
+        height: 35,
+        fontSize: 12,
+        backgroundColor: '#EEE9E9',
         borderRadius: 10,
     },
+    placeHolder: {
+        justifyContent: 'center',
+    }
 });
 
 class SearchView extends React.Component {
@@ -33,8 +38,8 @@ class SearchView extends React.Component {
             <View style={styles.container}>
                 <TextInput
                     style={styles.input}
-                    placeholder={" "+this.props.placeHolder}
-                    placeholderTextColor= 'gray'
+                    placeholder={" " + this.props.placeHolder}
+                    placeholderStyle={{ color: 'red' }}
                     onChangeText={(keywoards) => console.log("searching for :", keywoards)}
                 />
             </View>

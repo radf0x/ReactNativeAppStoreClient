@@ -27,7 +27,7 @@ import RecommendedListView from '../views/RecommendedListView';
 let ratingResults = [];
 let topApps = [];
 let recommendedApps = [];
-const title = "Awesome App Store";
+const title = "Search for app";
 
 class FreeAppItem extends Component {
     constructor(props) {
@@ -61,11 +61,11 @@ class FreeAppItem extends Component {
             .then(data => {
                 console.log(data.feed.entry);
                 topApps = data.feed.entry;
-                    this.setState({
-                        dataSource: this.state.dataSource.cloneWithRows(topApps),
-                        queryingTopApps: false,
-                        page: this.state.page + 1
-                    });
+                this.setState({
+                    dataSource: this.state.dataSource.cloneWithRows(topApps),
+                    queryingTopApps: false,
+                    page: this.state.page + 1
+                });
                 this.queryAppDetailById(topApps)
             })
             .catch((exception) => {
@@ -119,7 +119,7 @@ class FreeAppItem extends Component {
                     <Text style={styles.category}>
                         {`${rowData.category.attributes.term}`}
                     </Text>
-                    <RatingView style={styles.star}
+                    <RatingView
                         score={0}
                         allowsHalfStars={true}
                         tintColor={'red'}
@@ -158,6 +158,7 @@ class FreeAppItem extends Component {
                                 renderRow={this._renderRow}
                                 renderHeader={this._renderRecommendedView}
                                 renderFooter={this._renderFooter}
+                                renderSeparator={(rowID) => <View key={rowID} style={styles.separator} />}
                             />
                         }
                     </ScrollView>
@@ -169,17 +170,15 @@ class FreeAppItem extends Component {
 
 const styles = StyleSheet.create({
     mainContainer: {
-        backgroundColor: '#C1FFC1',
         flex: 1,
-        flexDirection: 'column'
+        flexDirection: 'column',
+        backgroundColor: '#ffffff',
     },
     headerContainer: {
         flexDirection: 'row',
-        backgroundColor: 'yellow',
     },
     contentContainer: { // app list view style
         flex: 6,
-        backgroundColor: '#FFFFF0'
     },
     itemContainer: {    // app item style
         flex: 1,
@@ -214,11 +213,13 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         margin: 10
     },
-    star: {
-        marginTop: 6,
-    },
     scrollSpinner: {
         marginVertical: 20,
+    },
+    separator: {
+        flex: 1,
+        height: .25,
+        backgroundColor: 'gray',
     }
 });
 
