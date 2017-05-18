@@ -18,11 +18,11 @@ const styles = StyleSheet.create({
         backgroundColor: '#C1C1C1',
     },
     input: {
-        height: 50,
+        height: 42,
         flex: 1,
-        fontSize: 20,
+        fontSize: 16,
         backgroundColor: '#FFFFFF',
-        borderRadius: 2,
+        borderRadius: 10,
     },
 });
 
@@ -37,9 +37,9 @@ class HeaderView extends React.Component {
             <View style={styles.container}>
                 <TextInput
                     style={styles.input}
-                    placeHolder={this.props.name}
-                    placeholderTextColor='gray'
-                    onChangeText={(text) => console.log("searching for :", text)}
+                    placeholder={" "+this.props.title}
+                    placeholderTextColor= 'gray'
+                    onChangeText={(keywoards) => console.log("searching for :", keywoards)}
                 />
             </View>
         )
