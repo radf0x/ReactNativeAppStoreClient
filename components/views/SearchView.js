@@ -33,7 +33,6 @@ class SearchView extends React.Component {
         super(props);
     }
     render() {
-        console.log(this.props.placeHolder)
         return (
             <View style={styles.container}>
                 <TextInput

@@ -4,9 +4,9 @@ import {
     ListView,
     StyleSheet,
     Text,
-    Image
+    Image,
+    AsyncStorage
 } from 'react-native';
-
 let recommenedApps = [];
 
 export default class RecommendedListView extends Component {
@@ -16,6 +16,7 @@ export default class RecommendedListView extends Component {
             dataSource: new ListView.DataSource({
                 rowHasChanged: (row1, row2) => row1 !== row2,
             }),
+            bQueryingRecommendedApps: true
         }
     }
 
@@ -32,16 +33,36 @@ export default class RecommendedListView extends Component {
                 return response.json();
             })
             .then(data => {
-                recommenedApps = data.feed.entry;
-                this.setState({
-                    dataSource: this.state.dataSource.cloneWithRows(recommenedApps),
-                })
-                console.log(data.feed.entry)
+                this.persistApps('recommended', data.feed.entry)
             })
             .catch((exception) => {
                 console.log(exception);
             })
             .done();
+    }
+
+    persistApps(key, json) {
+        try {
+            AsyncStorage
+                .setItem(key, JSON.stringify(json))
+                .then(this.getCachedApps(key));
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    getCachedApps(key) {
+        try {
+            AsyncStorage.getItem(key).then((value) => {
+                recommenedApps = JSON.parse(value)
+                this.setState({
+                    dataSource: this.state.dataSource.cloneWithRows(recommenedApps),
+                    bQueryingRecommendedApps: false
+                });
+            })
+        } catch (error) {
+            console.log(error)
+        }
     }
 
     _renderRow(rowData, sectionID, rowID) {
@@ -63,12 +84,16 @@ export default class RecommendedListView extends Component {
         return (
             <View style={styles.container}>
                 <Text style={styles.header}>Recommended</Text>
-                <ListView
-                    automaticallyAdjustContentInsets={false}
-                    horizontal={true}
-                    dataSource={this.state.dataSource}
-                    renderRow={this._renderRow}
-                />
+                {
+                    !this.state.bQueryingRecommendedApps &&
+                    <ListView
+                        horizontal={true}
+                        dataSource={this.state.dataSource}
+                        renderRow={this._renderRow}
+                        onEndReachedThreshold={10}
+                        onEndReached={() => console.log('end reached')}
+                    />
+                }
             </View>
         )
     }

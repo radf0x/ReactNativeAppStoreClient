@@ -1,6 +1,4 @@
 /**
- * Model class for every app item.
- * 
  * NOTES:
  * React.create | extends Component 
  * https://toddmotto.com/react-create-class-versus-component/
@@ -11,12 +9,12 @@ import {
     View,
 } from 'react-native';
 
-import SearchView from '../views/SearchView';
-import TopAppsListView from '../views/TopAppsListView';
+import SearchView from './SearchView';
+import TopAppsListView from './TopAppsListView';
 
 const title = "Search for app";
 
-export default class FreeAppItem extends Component {
+export default class AppStore extends Component {
     constructor(props) {
         super(props);
         this.state = {};

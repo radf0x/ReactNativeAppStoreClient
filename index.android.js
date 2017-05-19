@@ -10,12 +10,12 @@ import {
   View,
 } from 'react-native';
 
-import FreeAppItem from './components/models/FreeAppItem'
+import AppStore from './components/views/AppStore'
 
 class ReactNativeAppStoreClient extends Component {
   render() {
     return (
-        <FreeAppItem/>
+        <AppStore/>
     );
   }
 }

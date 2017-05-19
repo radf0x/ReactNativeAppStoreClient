@@ -5,20 +5,25 @@ import {
     StyleSheet,
     Text,
     Image,
-    ScrollView
+    ScrollView,
+    AsyncStorage,
+    RefreshControl
 } from 'react-native';
 
 import RatingView from 'react-native-star-rating-view/StarRatingBar';
-import RecommendedListView from '../views/RecommendedListView';
+import RecommendedListView from './RecommendedListView';
 
 let ratingResults = [];
 let topApps = [];
+let displayingApps = [];
 
 export default class TopAppsListView extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            queryingRating: false,
+            refreshing: false,
+            currentStart: 0,
+            queryingRating: true,
             queryingTopApps: true,
             page: 1,
             dataSource: new ListView.DataSource({
@@ -41,14 +46,8 @@ export default class TopAppsListView extends Component {
                 return response.json();
             })
             .then(data => {
-                console.log(data.feed.entry);
-                topApps = data.feed.entry;
-                this.setState({
-                    dataSource: this.state.dataSource.cloneWithRows(topApps),
-                    queryingTopApps: false,
-                    page: this.state.page + 1
-                });
-                this.queryAppDetailById(topApps)
+                this.persistApps('topapps', data.feed.entry);
+                // this.queryAppDetailById(topApps)
             })
             .catch((exception) => {
                 console.log(exception);
@@ -78,6 +77,38 @@ export default class TopAppsListView extends Component {
         })
     }
 
+    persistApps(key, json) {
+        try {
+            AsyncStorage
+                .setItem(key, JSON.stringify(json))
+                .then(this.getCachedApps(key));
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    async getCachedApps(key) {
+        if (this.state.currentStart != 0) {
+            displayingApps = displayingApps.concat(topApps.slice(this.state.currentStart, this.state.currentStart + 10))
+        } else {
+            console.log('first time')
+            try {
+                await AsyncStorage.getItem(key).then((value) => {
+                    topApps = JSON.parse(value)
+                    displayingApps = topApps.slice(0, 10)
+                })
+
+            } catch (error) {
+                console.log(error)
+            }
+        }
+        console.log(displayingApps)
+        this.setState({
+            dataSource: this.state.dataSource.cloneWithRows(displayingApps),
+            queryingTopApps: false
+        });
+    }
+
     _renderRecommendedView() {
         return (
             <RecommendedListView />
@@ -86,10 +117,8 @@ export default class TopAppsListView extends Component {
 
     _renderFooter = () => {
         if (!this.state.queryingTopApps) {
-            console.log('loaded');
             return <View style={styles.scrollSpinner} />
         }
-        console.log('loading');
         return <ActivityIndicator style={styles.scrollSpinner} />
     }
 
@@ -127,21 +156,55 @@ export default class TopAppsListView extends Component {
             </View>
         );
     }
+
+    _onEndReached() {
+        if (this.state.currentStart == topApps.length) {
+            return
+        }
+
+        if (this.state.currentStart != 0) {
+            this.getCachedApps('topapps')
+        }
+        this.setState({
+            currentStart: this.state.currentStart + 10,
+            dataSource: this.state.dataSource.cloneWithRows(displayingApps)
+        })
+    }
+
+    _onRefresh() {
+        this.setState({
+            refreshing: true,
+            currentStart: 0,
+        })
+        displayingApps = [];
+        this.queryTopFreeApps();
+        this.setState({ refreshing: false })
+    }
+
     render() {
         return (
             <View>
-                <ScrollView>
-                    {
-                        !this.state.queryingTopApps &&
-                        <ListView
-                            dataSource={this.state.dataSource}
-                            renderRow={this._renderRow}
-                            renderHeader={this._renderRecommendedView}
-                            renderFooter={this._renderFooter}
-                            renderSeparator={(rowID) => <View key={rowID} style={styles.separator} />}
-                        />
-                    }
-                </ScrollView>
+                {
+                    !this.state.queryingTopApps &&
+                    <ListView
+                        initialListSize={5}
+                        enableEmptySections={true}
+                        dataSource={this.state.dataSource}
+                        renderRow={this._renderRow}
+                        onEndReachedThreshold={10}
+                        onEndReached={this._onEndReached.bind(this)}
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={this.state.refreshing}
+                                onRefresh={this._onRefresh.bind(this)}
+                            />
+                        }
+                        renderHeader={this._renderRecommendedView}
+                        renderFooter={this._renderFooter}
+                        renderSeparator={(rowID) => <View key={rowID} style={styles.separator} />
+                        }
+                    />
+                }
             </View>
         );
     }
