@@ -13,8 +13,8 @@ import {
 } from 'react-native';
 
 import RatingView from 'react-native-star-rating-view/StarRatingBar';
-import RecommendedListView from './RecommendedListView';
 
+let recommenedApps = [];
 let ratingResults = [];
 let topApps = [];
 let displayingApps = [];
@@ -29,8 +29,12 @@ export default class TopAppsListView extends Component {
             currentStart: 0,
             queryingRating: true,
             queryingTopApps: true,
+            bQueryingRecommendedApps: true,
             page: 1,
             dataSource: new ListView.DataSource({
+                rowHasChanged: (row1, row2) => row1 !== row2,
+            }),
+            dataSourceRecommended: new ListView.DataSource({
                 rowHasChanged: (row1, row2) => row1 !== row2,
             }),
         };
@@ -38,7 +42,12 @@ export default class TopAppsListView extends Component {
 
     componentDidMount() {
         this.queryTopFreeApps();
+        this.queryRecommendedApps();
     }
+
+    /**
+     * Top Apps View
+     */
 
     /**
      * Should wrap it in API.js
@@ -112,14 +121,45 @@ export default class TopAppsListView extends Component {
         });
     }
 
-    _renderRecommendedView() {
+    renderSearchView() {
         return (
-            <RecommendedListView />
+            <View style={searchStyles.searchContainer}>
+                <TextInput
+                    style={searchStyles.input}
+                    placeholder={" " + PLACEHOLDER}
+                    onChangeText={(keywords) => {
+                        this.filterApps(keywords),
+                            this.filterRecommendedApps(keywords)
+                    }}
+                />
+            </View>
         )
     }
 
-    _renderFooter = () => {
-        if(this.state.searching){
+    renderRecommendedView() {
+        return (
+            <View style={recommenedStyles.container}>
+                <Text style={recommenedStyles.header}>Recommended</Text>
+                {
+                    !this.state.bQueryingRecommendedApps &&
+                    <ListView
+                        initialListSize={5}
+                        enableEmptySections={true}
+                        horizontal={true}
+                        dataSource={this.state.dataSourceRecommended}
+                        renderRow={this._renderRecommendRow}
+                    />
+                }
+            </View>
+        )
+    }
+
+    filterRecommendedView() {
+        console.log('filter rec')
+    }
+
+    renderFooter = () => {
+        if (this.state.searching) {
             return
         }
         if (this.state.currentStart == topApps.length) {
@@ -204,18 +244,6 @@ export default class TopAppsListView extends Component {
         this.timer && clearTimeOut(this.timer);
     }
 
-    renderSearchView() {
-        return (
-            <View style={styles.searchContainer}>
-                <TextInput
-                    style={styles.input}
-                    placeholder={" " + PLACEHOLDER}
-                    onChangeText={(keywords) => this.filterApps(keywords)}
-                />
-            </View>
-        )
-    }
-
     filterApps(keywords) {
         if (keywords.length == 0) {
             this.setState({
@@ -225,7 +253,7 @@ export default class TopAppsListView extends Component {
         } else {
             const filtered = topApps.filter(function (item) {
                 const itemData = item['im:name'].label.toLowerCase();
-                const searchData = keywords.toLowerCase();
+                const searchData = keywords.toLowerCase().replace(/\\/g, "\\\\");
                 return itemData.search(searchData) !== -1;
             });
 
@@ -238,11 +266,34 @@ export default class TopAppsListView extends Component {
         }
     }
 
+    filterRecommendedApps(keywords) {
+        if (keywords.length == 0) {
+            this.setState({
+                searching: false,
+                dataSourceRecommended: this.state.dataSourceRecommended.cloneWithRows(recommenedApps),
+            })
+        } else {
+            const filtered = recommenedApps.filter(function (item) {
+                const itemData = item['im:name'].label.toLowerCase();
+                const searchData = keywords.toLowerCase().replace(/\\/g, "\\\\");
+                return itemData.search(searchData) !== -1;
+            });
+
+            console.log(filtered)
+
+            this.setState({
+                searching: true,
+                dataSourceRecommended: this.state.dataSourceRecommended.cloneWithRows(filtered),
+            })
+        }
+    }
+
+
     render() {
         return (
             <View style={styles.mainContainer}>
                 {this.renderSearchView()}
-                <View style={{ flex: 5 }}>
+                <View style={{ flex: 1 }}>
                     {
                         !this.state.queryingTopApps &&
                         <ListView
@@ -258,8 +309,8 @@ export default class TopAppsListView extends Component {
                                     onRefresh={this._onRefresh.bind(this)}
                                 />
                             }
-                            renderHeader={this._renderRecommendedView}
-                            renderFooter={this._renderFooter}
+                            renderHeader={this.renderRecommendedView.bind(this)}
+                            renderFooter={this.renderFooter}
                             renderSeparator={(rowID) => <View key={rowID} style={styles.separator} />
                             }
                         />
@@ -268,9 +319,101 @@ export default class TopAppsListView extends Component {
             </View>
         );
     }
+
+    /**
+     * Should wrap it in API.js
+     */
+    async queryRecommendedApps() {
+        await fetch("https://itunes.apple.com/hk/rss/topgrossingapplications/limit=10/json", { method: "GET" })
+            .then((response) => {
+                return response.json();
+            })
+            .then(data => {
+                this.persistRecommendedApps('recommended', data.feed.entry)
+            })
+            .catch((exception) => {
+                console.log(exception);
+            })
+            .done();
+    }
+
+    persistRecommendedApps(key, json) {
+        try {
+            AsyncStorage
+                .setItem(key, JSON.stringify(json))
+                .then(this.getCachedRecommendedApps(key));
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    getCachedRecommendedApps(key) {
+        try {
+            AsyncStorage.getItem(key).then((value) => {
+                recommenedApps = JSON.parse(value)
+                this.setState({
+                    dataSourceRecommended: this.state.dataSourceRecommended.cloneWithRows(recommenedApps),
+                    bQueryingRecommendedApps: false
+                });
+            })
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    _renderRecommendRow(rowData, sectionID, rowID) {
+        return (
+            <View style={recommenedStyles.itemContainer}>
+                <Image style={recommenedStyles.thumbnail}
+                    source={{ uri: rowData['im:image'][0].label }} />
+                <Text style={recommenedStyles.name}>
+                    {rowData['im:name'].label}
+                </Text>
+                <Text style={recommenedStyles.category}>
+                    {rowData.category.attributes.term}
+                </Text>
+            </View>
+        );
+    }
 }
 
-const styles = StyleSheet.create({
+const recommenedStyles = StyleSheet.create({
+    container: {
+        borderBottomWidth: .25,
+        borderColor: 'gray',
+        flexDirection: 'column',
+        backgroundColor: '#ffffff'
+    },
+    header: {
+        margin: 16,
+        color: 'black',
+        fontSize: 16,
+    },
+    itemContainer: {
+        width: 75,
+        marginLeft: 16,
+        marginRight: 16,
+        flexDirection: 'column'
+    },
+    name: {
+        marginTop: 8,
+        justifyContent: 'center',
+        fontSize: 12,
+    },
+    category: {
+        marginTop: 8,
+        marginBottom: 8,
+        justifyContent: 'center',
+        fontSize: 10,
+    },
+    thumbnail: {
+        height: 60,
+        width: 60,
+        borderRadius: 10,
+    },
+})
+
+const searchStyles = StyleSheet.create({
     searchContainer: {
         padding: 8,
         backgroundColor: '#FFFFFF',
@@ -282,16 +425,13 @@ const styles = StyleSheet.create({
         fontSize: 12,
         backgroundColor: '#EEE9E9',
         borderRadius: 10,
-    },
-    placeHolder: {
-        justifyContent: 'center',
-    },
+    }
+})
+
+const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
         backgroundColor: '#ffffff'
-    },
-    headerContainer: {
-        flexDirection: 'row',
     },
     itemContainer: {
         flex: 1,
