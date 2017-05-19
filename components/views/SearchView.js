@@ -9,6 +9,37 @@ import {
     StyleSheet
 } from 'react-native';
 
+class SearchView extends React.Component {
+
+    constructor(props) {
+        super(props);
+    }
+
+    filterApps(keywords) {
+        let text = keywords.toLowerCase();
+        this.props.data.map(function (item) {
+            if (keywords.toLowerCase().contains(item['im:name'].label.toLowerCase())) {
+                console.log(item['im:name'].label)
+            }
+        })
+        // console.log(this.props.data)
+        // console.log(keywoards)
+    }
+
+    render() {
+        return (
+            <View style={styles.container}>
+                <TextInput
+                    style={styles.input}
+                    placeholder={" " + this.props.placeHolder}
+                    placeholderStyle={{ color: 'red' }}
+                    onChangeText={(keywords) => this.filterApps(keywords)}
+                />
+            </View>
+        )
+    }
+}
+
 const styles = StyleSheet.create({
     container: {
         padding: 8,
@@ -27,23 +58,5 @@ const styles = StyleSheet.create({
     }
 });
 
-class SearchView extends React.Component {
-
-    constructor(props) {
-        super(props);
-    }
-    render() {
-        return (
-            <View style={styles.container}>
-                <TextInput
-                    style={styles.input}
-                    placeholder={" " + this.props.placeHolder}
-                    placeholderStyle={{ color: 'red' }}
-                    onChangeText={(keywoards) => console.log("searching for :", keywoards)}
-                />
-            </View>
-        )
-    }
-}
 
 export default SearchView; 
