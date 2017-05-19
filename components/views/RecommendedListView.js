@@ -27,8 +27,8 @@ export default class RecommendedListView extends Component {
     /**
      * Should wrap it in API.js
      */
-    queryRecommendedApps() {
-        fetch("https://itunes.apple.com/hk/rss/topgrossingapplications/limit=10/json", { method: "GET" })
+    async queryRecommendedApps() {
+        await fetch("https://itunes.apple.com/hk/rss/topgrossingapplications/limit=10/json", { method: "GET" })
             .then((response) => {
                 return response.json();
             })

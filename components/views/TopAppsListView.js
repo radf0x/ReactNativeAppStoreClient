@@ -7,7 +7,8 @@ import {
     Image,
     ScrollView,
     AsyncStorage,
-    RefreshControl
+    RefreshControl,
+    ActivityIndicator
 } from 'react-native';
 
 import RatingView from 'react-native-star-rating-view/StarRatingBar';
@@ -39,8 +40,8 @@ export default class TopAppsListView extends Component {
     /**
      * Should wrap it in API.js
      */
-    queryTopFreeApps() {
-        fetch("https://itunes.apple.com/hk/rss/topfreeapplications/limit=100/json",
+    async queryTopFreeApps() {
+        await fetch("https://itunes.apple.com/hk/rss/topfreeapplications/limit=100/json",
             { method: "GET" })
             .then((response) => {
                 return response.json();
@@ -59,7 +60,7 @@ export default class TopAppsListView extends Component {
      * 
      * Should wrap it in API.js
      */
-    queryAppDetailById(topApps) {
+    async queryAppDetailById(topApps) {
         //todo query lookup API.
         topApps.map(function (item) {
             fetch("https://itunes.apple.com/hk/lookup?id=" + item.id.attributes['im:id'], { method: "GET" })
@@ -68,7 +69,7 @@ export default class TopAppsListView extends Component {
                 })
                 .then(response => {
                     // console.log(response.results)
-                    // ratingResults = response.results.averageUserRating;
+                    ratingResults = response.results.averageUserRating;
                 })
                 .catch((exception) => {
                     console.log(exception);
@@ -91,7 +92,6 @@ export default class TopAppsListView extends Component {
         if (this.state.currentStart != 0) {
             displayingApps = displayingApps.concat(topApps.slice(this.state.currentStart, this.state.currentStart + 10))
         } else {
-            console.log('first time')
             try {
                 await AsyncStorage.getItem(key).then((value) => {
                     topApps = JSON.parse(value)
@@ -102,10 +102,10 @@ export default class TopAppsListView extends Component {
                 console.log(error)
             }
         }
-        console.log(displayingApps)
         this.setState({
             dataSource: this.state.dataSource.cloneWithRows(displayingApps),
-            queryingTopApps: false
+            queryingTopApps: false,
+            currentStart: this.state.currentStart + 10
         });
     }
 
@@ -116,10 +116,19 @@ export default class TopAppsListView extends Component {
     }
 
     _renderFooter = () => {
-        if (!this.state.queryingTopApps) {
-            return <View style={styles.scrollSpinner} />
+        if (this.state.currentStart == topApps.length) {
+            return <View style={{
+                justifyContent: 'center',
+                alignItems: 'center',
+                flex: 1,
+                margin: 20,
+            }}><Text>END OF FEED</Text></View>
+        } else {
+            return <ActivityIndicator
+                style={[styles.centering
+                    , { backgroundColor: '#ffffff', margin: 20 }]}
+            />
         }
-        return <ActivityIndicator style={styles.scrollSpinner} />
     }
 
     /**
@@ -161,14 +170,15 @@ export default class TopAppsListView extends Component {
         if (this.state.currentStart == topApps.length) {
             return
         }
-
-        if (this.state.currentStart != 0) {
-            this.getCachedApps('topapps')
-        }
-        this.setState({
-            currentStart: this.state.currentStart + 10,
-            dataSource: this.state.dataSource.cloneWithRows(displayingApps)
-        })
+        this.timer = setTimeout(
+            () => {
+                if (this.state.currentStart > 0) {
+                    this.getCachedApps('topapps')
+                }
+                this.setState({
+                    dataSource: this.state.dataSource.cloneWithRows(displayingApps)
+                })
+            }, 250);
     }
 
     _onRefresh() {
@@ -179,6 +189,10 @@ export default class TopAppsListView extends Component {
         displayingApps = [];
         this.queryTopFreeApps();
         this.setState({ refreshing: false })
+    }
+
+    componentWillUnmount() {
+        this.timer && clearTimeOut(this.timer);
     }
 
     render() {
