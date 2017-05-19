@@ -45,12 +45,12 @@ export default class TopAppsListView extends Component {
         this.queryRecommendedApps();
     }
 
-    /**
-     * Top Apps View
-     */
+    componentWillUnmount() {
+        this.timer && clearTimeOut(this.timer);
+    }
 
     /**
-     * Should wrap it in API.js
+     * Requests should wrap it in API.js
      */
     async queryTopFreeApps() {
         await fetch("https://itunes.apple.com/hk/rss/topfreeapplications/limit=100/json",
@@ -68,19 +68,13 @@ export default class TopAppsListView extends Component {
             .done();
     }
 
-    /**
-     * 
-     * Should wrap it in API.js
-     */
     async queryAppDetailById(topApps) {
-        //todo query lookup API.
         topApps.map(function (item) {
             fetch("https://itunes.apple.com/hk/lookup?id=" + item.id.attributes['im:id'], { method: "GET" })
                 .then((response) => {
                     return response.json();
                 })
                 .then(response => {
-                    // console.log(response.results)
                     ratingResults = response.results.averageUserRating;
                 })
                 .catch((exception) => {
@@ -90,11 +84,53 @@ export default class TopAppsListView extends Component {
         })
     }
 
-    persistApps(key, json) {
+    async queryRecommendedApps() {
+        await fetch("https://itunes.apple.com/hk/rss/topgrossingapplications/limit=10/json", { method: "GET" })
+            .then((response) => {
+                return response.json();
+            })
+            .then(data => {
+                this.persistRecommendedApps('recommended', data.feed.entry)
+            })
+            .catch((exception) => {
+                console.log(exception);
+            })
+            .done();
+    }
+
+    /**
+     * Persist apps to storage
+     */
+
+    async persistRecommendedApps(key, json) {
         try {
-            AsyncStorage
+            await AsyncStorage
+                .setItem(key, JSON.stringify(json))
+                .then(this.getCachedRecommendedApps(key));
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    async persistApps(key, json) {
+        try {
+            await AsyncStorage
                 .setItem(key, JSON.stringify(json))
                 .then(this.getCachedApps(key));
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    async getCachedRecommendedApps(key) {
+        try {
+            await AsyncStorage.getItem(key).then((value) => {
+                recommenedApps = JSON.parse(value)
+                this.setState({
+                    dataSourceRecommended: this.state.dataSourceRecommended.cloneWithRows(recommenedApps),
+                    bQueryingRecommendedApps: false
+                });
+            })
         } catch (error) {
             console.log(error)
         }
@@ -121,6 +157,57 @@ export default class TopAppsListView extends Component {
         });
     }
 
+    /**
+     * Filter functions
+     */
+
+    filterApps(keywords) {
+        if (keywords.length == 0) {
+            this.setState({
+                searching: false,
+                dataSource: this.state.dataSource.cloneWithRows(topApps.slice(0, 10)),
+            })
+        } else {
+            const filtered = topApps.filter(function (item) {
+                const itemData = item['im:name'].label.toLowerCase();
+                const searchData = keywords.toLowerCase().replace(/\\/g, "\\\\");
+                return itemData.search(searchData) !== -1;
+            });
+
+            console.log(filtered)
+
+            this.setState({
+                searching: true,
+                dataSource: this.state.dataSource.cloneWithRows(filtered),
+            })
+        }
+    }
+
+    filterRecommendedApps(keywords) {
+        if (keywords.length == 0) {
+            this.setState({
+                searching: false,
+                dataSourceRecommended: this.state.dataSourceRecommended.cloneWithRows(recommenedApps),
+            })
+        } else {
+            const filtered = recommenedApps.filter(function (item) {
+                const itemData = item['im:name'].label.toLowerCase();
+                const searchData = keywords.toLowerCase().replace(/\\/g, "\\\\");
+                return itemData.search(searchData) !== -1;
+            });
+
+            console.log(filtered)
+
+            this.setState({
+                searching: true,
+                dataSourceRecommended: this.state.dataSourceRecommended.cloneWithRows(filtered),
+            })
+        }
+    }
+
+    /**
+     * Render view components
+     */
     renderSearchView() {
         return (
             <View style={searchStyles.searchContainer}>
@@ -152,10 +239,6 @@ export default class TopAppsListView extends Component {
                 }
             </View>
         )
-    }
-
-    filterRecommendedView() {
-        console.log('filter rec')
     }
 
     renderFooter = () => {
@@ -212,6 +295,25 @@ export default class TopAppsListView extends Component {
         );
     }
 
+    _renderRecommendRow(rowData, sectionID, rowID) {
+        return (
+            <View style={recommenedStyles.itemContainer}>
+                <Image style={recommenedStyles.thumbnail}
+                    source={{ uri: rowData['im:image'][0].label }} />
+                <Text style={recommenedStyles.name}>
+                    {rowData['im:name'].label}
+                </Text>
+                <Text style={recommenedStyles.category}>
+                    {rowData.category.attributes.term}
+                </Text>
+            </View>
+        );
+    }
+
+
+    /**
+     * UI Callbacks
+     */
     _onEndReached() {
         if (this.state.currentStart == topApps.length || this.state.searching) {
             return
@@ -240,55 +342,6 @@ export default class TopAppsListView extends Component {
         this.setState({ refreshing: false })
     }
 
-    componentWillUnmount() {
-        this.timer && clearTimeOut(this.timer);
-    }
-
-    filterApps(keywords) {
-        if (keywords.length == 0) {
-            this.setState({
-                searching: false,
-                dataSource: this.state.dataSource.cloneWithRows(topApps.slice(0, 10)),
-            })
-        } else {
-            const filtered = topApps.filter(function (item) {
-                const itemData = item['im:name'].label.toLowerCase();
-                const searchData = keywords.toLowerCase().replace(/\\/g, "\\\\");
-                return itemData.search(searchData) !== -1;
-            });
-
-            console.log(filtered)
-
-            this.setState({
-                searching: true,
-                dataSource: this.state.dataSource.cloneWithRows(filtered),
-            })
-        }
-    }
-
-    filterRecommendedApps(keywords) {
-        if (keywords.length == 0) {
-            this.setState({
-                searching: false,
-                dataSourceRecommended: this.state.dataSourceRecommended.cloneWithRows(recommenedApps),
-            })
-        } else {
-            const filtered = recommenedApps.filter(function (item) {
-                const itemData = item['im:name'].label.toLowerCase();
-                const searchData = keywords.toLowerCase().replace(/\\/g, "\\\\");
-                return itemData.search(searchData) !== -1;
-            });
-
-            console.log(filtered)
-
-            this.setState({
-                searching: true,
-                dataSourceRecommended: this.state.dataSourceRecommended.cloneWithRows(filtered),
-            })
-        }
-    }
-
-
     render() {
         return (
             <View style={styles.mainContainer}>
@@ -316,62 +369,6 @@ export default class TopAppsListView extends Component {
                         />
                     }
                 </View>
-            </View>
-        );
-    }
-
-    /**
-     * Should wrap it in API.js
-     */
-    async queryRecommendedApps() {
-        await fetch("https://itunes.apple.com/hk/rss/topgrossingapplications/limit=10/json", { method: "GET" })
-            .then((response) => {
-                return response.json();
-            })
-            .then(data => {
-                this.persistRecommendedApps('recommended', data.feed.entry)
-            })
-            .catch((exception) => {
-                console.log(exception);
-            })
-            .done();
-    }
-
-    persistRecommendedApps(key, json) {
-        try {
-            AsyncStorage
-                .setItem(key, JSON.stringify(json))
-                .then(this.getCachedRecommendedApps(key));
-        } catch (error) {
-            console.log(error)
-        }
-    }
-
-    getCachedRecommendedApps(key) {
-        try {
-            AsyncStorage.getItem(key).then((value) => {
-                recommenedApps = JSON.parse(value)
-                this.setState({
-                    dataSourceRecommended: this.state.dataSourceRecommended.cloneWithRows(recommenedApps),
-                    bQueryingRecommendedApps: false
-                });
-            })
-        } catch (error) {
-            console.log(error)
-        }
-    }
-
-    _renderRecommendRow(rowData, sectionID, rowID) {
-        return (
-            <View style={recommenedStyles.itemContainer}>
-                <Image style={recommenedStyles.thumbnail}
-                    source={{ uri: rowData['im:image'][0].label }} />
-                <Text style={recommenedStyles.name}>
-                    {rowData['im:name'].label}
-                </Text>
-                <Text style={recommenedStyles.category}>
-                    {rowData.category.attributes.term}
-                </Text>
             </View>
         );
     }
