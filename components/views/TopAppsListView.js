@@ -46,7 +46,7 @@ export default class TopAppsListView extends Component {
     }
 
     componentWillUnmount() {
-        this.timer && clearTimeOut(this.timer);
+        // this.timer && this.timer.clearTimeOut(this.timer);
     }
 
     /**
@@ -60,7 +60,7 @@ export default class TopAppsListView extends Component {
             })
             .then(data => {
                 this.persistApps('topapps', data.feed.entry);
-                // this.queryAppDetailById(topApps)
+                this.queryAppDetailById(data.feed.entry);
             })
             .catch((exception) => {
                 console.log(exception);
@@ -68,19 +68,22 @@ export default class TopAppsListView extends Component {
             .done();
     }
 
-    async queryAppDetailById(topApps) {
-        topApps.map(function (item) {
+    queryAppDetailById(apps) {
+        apps.map(function (item) {
             fetch("https://itunes.apple.com/hk/lookup?id=" + item.id.attributes['im:id'], { method: "GET" })
                 .then((response) => {
                     return response.json();
                 })
-                .then(response => {
-                    ratingResults = response.results.averageUserRating;
+                .then(data => {
+                    ratingResults.push(data.results[0].averageUserRating);
                 })
                 .catch((exception) => {
                     console.log(exception);
                 })
                 .done();
+        })
+        this.setState({
+            queryingTopApps: false,
         })
     }
 
@@ -152,7 +155,6 @@ export default class TopAppsListView extends Component {
         }
         this.setState({
             dataSource: this.state.dataSource.cloneWithRows(displayingApps),
-            queryingTopApps: false,
             currentStart: this.state.currentStart + 10
         });
     }
@@ -230,6 +232,7 @@ export default class TopAppsListView extends Component {
                 {
                     !this.state.bQueryingRecommendedApps &&
                     <ListView
+                        scrollWi
                         initialListSize={5}
                         enableEmptySections={true}
                         horizontal={true}
@@ -283,12 +286,12 @@ export default class TopAppsListView extends Component {
                     <Text style={styles.category}>
                         {`${rowData.category.attributes.term}`}
                     </Text>
-                    {/*<RatingView
-                        score={0}
+                    <RatingView
+                        score={ratingResults[rowID]}
                         allowsHalfStars={true}
                         tintColor={'red'}
                         scoreTextColor={'red'}
-                    />*/}
+                    />
                 </View>
 
             </View>
@@ -318,7 +321,7 @@ export default class TopAppsListView extends Component {
         if (this.state.currentStart == topApps.length || this.state.searching) {
             return
         }
-        this.timer = setTimeout(
+        setTimeout(
             () => {
                 if (this.state.currentStart > 0) {
                     this.getCachedApps('topapps')
